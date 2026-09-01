@@ -1,0 +1,26 @@
+# python
+__pycache__/
+.venv/
+*.pyc
+*.egg-info/
+
+# private training and evaluation data
+/data/
+
+# training outputs
+runs/
+
+# model artifacts: fetched from the model registry, or written by the
+# reproduction exporter
+/artifacts/
+
+# headers each sketch generates from those artifacts
+firmware/**/generated/
+
+# raw video / recordings (demo footage - keep out of the repo)
+video/
+videos/
+*.mp4
+*.mov
+*.MOV
+*.MP4
