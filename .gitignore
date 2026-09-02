@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 *.pyc
 *.egg-info/
+venv/
 
 # private training and evaluation data
 /data/
@@ -24,3 +25,6 @@ videos/
 *.mov
 *.MOV
 *.MP4
+
+bin/
+.kilo/

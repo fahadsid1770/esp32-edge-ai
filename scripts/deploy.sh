@@ -9,6 +9,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+VENV_DIR="$ROOT/venv"
+if [ -f "$VENV_DIR/bin/activate" ]; then source "$VENV_DIR/bin/activate"; fi
 
 # Run one step of the deployment. On success only the interesting lines are
 # shown, because a working run should read as a short checklist. On failure the
@@ -104,18 +106,18 @@ prepare_headers() {
       # pass that check and decode every token wrongly.
       echo "=== generate $SKETCH/generated/vocab.h from $TOKENIZER ==="
       SHOW=wrote step 0 "generate vocab.h" \
-        uv run --no-project --with 'tokenizers==0.23.1' python "$SKETCH/tools/generate_vocab.py" \
+        python "$SKETCH/tools/generate_vocab.py" \
         --tokenizer "$TOKENIZER" --out "$SKETCH/generated/vocab.h"
       ;;
     barista)
       echo "=== generate word tables from $VOCAB and $LAYOUT ==="
       SHOW=wrote step 0 "generate word tables" \
-        uv run --no-project python "$SKETCH/tools/generate_vocab_headers.py" \
+        python "$SKETCH/tools/generate_vocab_headers.py" \
         --vocab "$VOCAB" --layout "$LAYOUT" \
         --out-dir "$SKETCH/generated"
       echo "=== generate encoder asset from $TOKENIZER ==="
       SHOW=wrote step 0 "generate encoder asset" \
-        uv run --no-project python "$SKETCH/tools/generate_tokenizer_header.py" \
+        python "$SKETCH/tools/generate_tokenizer_header.py" \
         --tokenizer "$TOKENIZER" \
         --out "$SKETCH/generated/tokenizer_encoder.h"
       ;;
@@ -132,7 +134,7 @@ extra_gates() {
       # the reused word mappings must resolve to the ids they claim.
       echo "=== host verify: device encoder vs Hugging Face, and the word map ==="
       step 1 "tokenizer conformance" \
-        uv run --no-project --with 'tokenizers==0.23.1' python "$SKETCH/tools/verify_tokenizer.py" \
+        python "$SKETCH/tools/verify_tokenizer.py" \
         --tokenizer "$TOKENIZER" --vocab "$VOCAB" --layout "$LAYOUT"
       ;;
   esac
@@ -183,6 +185,8 @@ if [ "$missing" -ne 0 ]; then
   echo "$FETCH_HINT" >&2
   exit 1
 fi
+
+pip install tokenizers==0.23.1
 
 prepare_headers
 

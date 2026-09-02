@@ -9,14 +9,17 @@
 # plumbing, differing ONLY by the presence of the lookup table, so the table's
 # isolated effect is ple - ple_notable at each point.
 set -euo pipefail
-cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+ROOT="$(cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)")"
+cd "$ROOT"
+VENV_DIR="$ROOT/venv"
+if [ -f "$VENV_DIR/bin/activate" ]; then source "$VENV_DIR/bin/activate"; fi
 
 log() { echo "[$(date '+%m-%d %H:%M')] $*"; }
 
 for pd in 64 128 256 512; do
   for arm in ple ple_notable; do
     log "RUN $arm ple_dim=$pd"
-    uv run python -m research.tinystories.train \
+    python -m research.tinystories.train \
       --arm "$arm" --vocab 4096 --fixed-ffn 256 --ple-dim "$pd" --steps 3000 \
       --seed 0 --tag "fix-d$pd"
   done

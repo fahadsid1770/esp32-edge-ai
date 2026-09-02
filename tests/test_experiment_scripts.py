@@ -8,7 +8,7 @@ Running these experiments takes GPU hours, so the scripts are read as text.
 What is checked is that each one states a vocabulary, that the value is the
 published one, and that its header says the same.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import re

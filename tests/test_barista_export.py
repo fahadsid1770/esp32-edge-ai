@@ -9,7 +9,7 @@ Both size relationships matter and neither is visible from the tables alone.
 Without them an export would pair the checkpoint weights with incompatible
 class-to-token tables.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import importlib.util

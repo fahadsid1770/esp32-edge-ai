@@ -11,7 +11,7 @@ while still writing the vocabulary it reads.
 Fixtures are small and synthetic, except the per-arm parameter budgets, which
 are pinned at the default shape so that a change to the head cannot move them.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import unittest

@@ -4,7 +4,7 @@ No board and no pyserial. The fixtures are verbatim serial captures from this
 project's two sketches, so a change to a sketch's output format fails here rather
 than producing a receipt full of zeros.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import contextlib

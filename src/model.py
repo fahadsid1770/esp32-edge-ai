@@ -27,22 +27,18 @@ Arms:
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 
 @dataclass
 class Config:
     arm: str = "baseline"
     vocab_size: int = 4096
-    # Rows in the output head. None, or a value equal to vocab_size, means the
-    # model writes the vocabulary it reads: the two are one id space and a
-    # sampled index is a token id. A different value gives the model its own
-    # output alphabet, so the head is a separate tensor and a sampled index is a
-    # class that has to be mapped before it can be fed back in.
     out_vocab_size: int | None = None
     d_model: int = 128
     n_layers: int = 6
@@ -51,6 +47,7 @@ class Config:
     seq_len: int = 512
     ple_dim: int = 64
     rope_theta: float = 10000.0
+    use_gradient_checkpointing: bool = False
 
     @property
     def head_dim(self):
@@ -164,13 +161,19 @@ class Block(nn.Module):
             self.ple_proj = nn.Linear(cfg.ple_dim, cfg.d_model, bias=False)
             self.ple_norm = RMSNorm(cfg.d_model)
 
-    def forward(self, x, cos, sin, ple=None):
-        x = x + self.attn(self.attn_norm(x), cos, sin)
-        x = x + self.ffn(self.ffn_norm(x))
-        if ple is not None:
-            g = F.gelu(self.ple_gate(x))
-            x = x + self.ple_norm(self.ple_proj(g * ple))
-        return x
+    def forward(self, x, cos, sin, ple=None, use_checkpoint=False):
+        def run_block():
+            nonlocal x
+            x = x + self.attn(self.attn_norm(x), cos, sin)
+            x = x + self.ffn(self.ffn_norm(x))
+            if ple is not None:
+                g = F.gelu(self.ple_gate(x))
+                x = x + self.ple_norm(self.ple_proj(g * ple))
+            return x
+
+        if use_checkpoint:
+            return checkpoint(run_block, use_reentrant=False, preserve_rng_state=True)
+        return run_block()
 
 
 class TinyLM(nn.Module):
@@ -246,7 +249,8 @@ class TinyLM(nn.Module):
                 ple = (ple + table * (cfg.ple_dim**0.5)) * (2**-0.5)
 
         for i, block in enumerate(self.blocks):
-            x = block(x, self.cos, self.sin, None if ple is None else ple[:, :, i])
+            x = block(x, self.cos, self.sin, None if ple is None else ple[:, :, i],
+                      use_checkpoint=cfg.use_gradient_checkpointing)
 
         x = self.out_norm(x)
         logits = self.head(x)

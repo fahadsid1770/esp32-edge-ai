@@ -6,7 +6,7 @@ holding only the script, rewrites its pinned hashes to describe files it
 generates, and puts a fake `hf` on PATH that copies a prepared directory into
 --local-dir. TMPDIR is redirected per test so staging can be inspected.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import hashlib

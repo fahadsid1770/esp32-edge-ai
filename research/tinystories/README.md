@@ -12,7 +12,7 @@ Only models whose research is public get a directory here.
 ## Requirements
 
 ```bash
-uv sync
+pip install -e .
 ```
 
 Installs the shared PLE modules (`model`, `quantize`) so `from model import ...`
@@ -31,7 +31,7 @@ The first 300 MB of
 licensed **CDLA-Sharing-1.0**. It is downloaded, not redistributed here.
 
 ```bash
-uv run python -m research.tinystories.prepare --vocab 32768
+python -m research.tinystories.prepare --vocab 32768
 ```
 
 Downloads the slice into `data/tinystories/raw/`, then writes the tokenizer and
@@ -58,7 +58,7 @@ is fair:
 | `bigcore` | the table budget spent on a wider core instead |
 
 ```bash
-uv run python -m research.tinystories.train --arm ple --vocab 4096 \
+python -m research.tinystories.train --arm ple --vocab 4096 \
   --steps 3000 --target-core 1500000 --seed 0
 ```
 
@@ -81,10 +81,10 @@ bash research/tinystories/scripts/run_deploy_ablation.sh
 ## Reading the results
 
 ```bash
-uv run python -m research.tinystories.analyze --tag cleandeploy \
+python -m research.tinystories.analyze --tag cleandeploy \
   --expect-arms baseline,ple,fatembed --expect-seeds 2
 
-uv run python -m research.tinystories.analyze --tag clean \
+python -m research.tinystories.analyze --tag clean \
   --expect-arms baseline,ple,ple_notable,fatembed,bigcore --expect-seeds 2
 ```
 
@@ -114,7 +114,7 @@ erases the curve the sweep exists to measure:
 
 ```bash
 for pd in 64 128 256 512; do
-  uv run python -m research.tinystories.analyze --tag "fix-d$pd" \
+  python -m research.tinystories.analyze --tag "fix-d$pd" \
     --expect-arms ple,ple_notable --expect-seeds 1
 done
 ```
@@ -146,12 +146,12 @@ Full tables, seeds and caveats are in [`RESULTS.md`](../../RESULTS.md).
 ```bash
 # group 64, fp32 scales - the first published PTQ table
 for s in 0 1; do
-  uv run python -m research.tinystories.quantize_eval --tag cleandeploy --seed $s
+  python -m research.tinystories.quantize_eval --tag cleandeploy --seed $s
 done
 
 # group 128, fp16 scales - what the exporter writes and the runtime reads
 for s in 0 1; do
-  uv run python -m research.tinystories.quantize_eval --tag cleandeploy --seed $s \
+  python -m research.tinystories.quantize_eval --tag cleandeploy --seed $s \
     --group 128 --fp16-scales
 done
 ```
@@ -166,7 +166,7 @@ checkpoint loading, validation data and arm loop.
 ## Sampling
 
 ```bash
-uv run python -m research.tinystories.sample \
+python -m research.tinystories.sample \
   --run runs/ple-cleandeploy-s0.pt \
   --tokenizer data/tinystories/vocab-32768/tokenizer.json
 ```
@@ -183,7 +183,7 @@ The published checkpoint predates tokenizer hashing, so reproducing that exact
 artifact requires the exception to be explicit:
 
 ```bash
-uv run python -m research.tinystories.export ple-cleandeploy-s0 \
+python -m research.tinystories.export ple-cleandeploy-s0 \
   --tokenizer data/tinystories/vocab-32768/tokenizer.json \
   --allow-unverified-tokenizer
 ```

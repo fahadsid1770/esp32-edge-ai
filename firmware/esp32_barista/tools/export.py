@@ -15,7 +15,7 @@ packed two per byte followed by fp16 group scales, or raw fp32 for the norms.
 The golden logits are the 4-bit model's, so comparing C against them isolates
 port correctness from quantization error.
 
-  uv run python firmware/esp32_barista/tools/export.py --checkpoint /path/to/checkpoint.pt
+  python firmware/esp32_barista/tools/export.py --checkpoint /path/to/checkpoint.pt
 """
 
 import argparse

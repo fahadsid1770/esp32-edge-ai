@@ -31,7 +31,7 @@ import torch
 
 from tokenizers import Tokenizer
 
-from model import Config, TinyLM
+from src.model import Config, TinyLM
 
 from pathlib import Path
 

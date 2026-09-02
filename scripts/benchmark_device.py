@@ -13,12 +13,12 @@ Barista's counter increments per emitted output class, and punctuation is a
 class, so its unit is an output piece rather than a readable word. Both counts
 are recorded.
 
-    uv run python scripts/benchmark_device.py barista --out runs/before.json \\
+    python scripts/benchmark_device.py barista --out runs/before.json \\
         --expect dual_core_active=1 --expect display_enabled=0
-    uv run python scripts/benchmark_device.py barista --out runs/after.json \\
+    python scripts/benchmark_device.py barista --out runs/after.json \\
         --expect dual_core_active=1 --baseline runs/before.json
 
-Needs pyserial, which is an optional extra: uv sync --extra device.
+Needs pyserial, which is an optional extra: pip install -e .[device].
 Receipts are written under runs/, which is gitignored.
 """
 
@@ -182,7 +182,7 @@ def open_port(port):
     try:
         import serial
     except ImportError:
-        sys.exit("pyserial is required: uv sync --extra device")
+        sys.exit("pyserial is required: pip install -e .[device]")
     if not port:
         found = sorted(glob.glob("/dev/cu.usbmodem*"))
         if not found:

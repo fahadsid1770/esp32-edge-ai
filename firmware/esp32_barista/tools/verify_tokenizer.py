@@ -14,7 +14,7 @@ Probes are fixed and public. They are written here rather than read from the
 corpus, so this runs from a clone with no private data, and so a corpus edit
 cannot quietly change what was checked.
 
-  uv run python firmware/esp32_barista/tools/verify_tokenizer.py
+  python firmware/esp32_barista/tools/verify_tokenizer.py
 """
 
 import argparse

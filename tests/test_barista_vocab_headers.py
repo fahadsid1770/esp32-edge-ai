@@ -17,7 +17,7 @@ synthetic and the tests do not require fetched HF assets. Each rejection is
 matched on its message, because a test that accepts any SystemExit would also
 pass if the generator failed while opening the file.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import contextlib

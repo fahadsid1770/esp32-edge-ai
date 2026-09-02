@@ -10,7 +10,7 @@ to Git, so every fixture here is synthetic and the tests do not require fetched
 HF assets. The byte mapping is checked against known GPT-2 values rather than
 against the generator's own function, so the fixture cannot certify itself.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import contextlib

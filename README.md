@@ -81,9 +81,8 @@ replaces it.
 pinned in the script, and cross-checks the release's own `metadata.json` against
 those same pins. It installs nothing unless every check passes, so a failed
 download leaves what you already have untouched. `deploy.sh` downloads no model:
-it works from whatever is already in `artifacts/<model>/`. It does run two of its
-header tools through `uv`, which fetches one pinned wheel the first time on a
-machine that has never cached it.
+it works from whatever is already in `artifacts/<model>/`. It uses the project's
+virtual environment at `venv/` to run its header tools.
 
 The firmware details and the boot output to expect live in
 [`firmware/esp32_barista/README.md`](firmware/esp32_barista/README.md) and

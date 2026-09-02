@@ -32,7 +32,7 @@ integration gate rather than to this conversion.
 Both headers are a pure function of the two JSON inputs. No timestamp, no host
 state, so regenerating on any machine produces byte-identical output.
 
-  uv run python firmware/esp32_barista/tools/generate_vocab_headers.py
+  python firmware/esp32_barista/tools/generate_vocab_headers.py
 """
 
 import argparse

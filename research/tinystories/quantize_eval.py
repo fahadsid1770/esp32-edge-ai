@@ -7,7 +7,7 @@ the CLI behind the PTQ rows in RESULTS.md.
 The reusable tensor math lives in src/quantize.py; everything here needs
 checkpoints, the validation bins and the arm names, so it is reproduction code.
 
-  uv run python -m research.tinystories.quantize_eval --tag cleandeploy
+  python -m research.tinystories.quantize_eval --tag cleandeploy
 """
 
 import argparse

@@ -9,14 +9,17 @@
 # bs16/sl256 keeps 32k-class cross-entropy off the MPS memory cliff; at
 # bs32/sl512 it stalls.
 set -euo pipefail
-cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+ROOT="$(cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)")"
+cd "$ROOT"
+VENV_DIR="$ROOT/venv"
+if [ -f "$VENV_DIR/bin/activate" ]; then source "$VENV_DIR/bin/activate"; fi
 
 log() { echo "[$(date '+%m-%d %H:%M')] $*"; }
 
 for seed in 0 1; do
   for arm in baseline ple fatembed; do
     log "RUN $arm seed$seed"
-    uv run python -m research.tinystories.train \
+    python -m research.tinystories.train \
       --arm "$arm" --vocab 32768 --d-model 96 --n-layers 6 --ple-dim 128 \
       --target-core 560000 --batch-size 16 --seq-len 256 --steps 5000 \
       --seed "$seed" --tag cleandeploy

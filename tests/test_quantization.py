@@ -5,7 +5,7 @@ nothing, both silently. The provenance checks exist because a filename is not
 an identity: a checkpoint copied over another name, or trained on a different
 schedule, otherwise compares as if it belonged.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import contextlib

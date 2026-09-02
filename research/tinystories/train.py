@@ -10,7 +10,8 @@ import time
 import numpy as np
 import torch
 
-from model import Config, TinyLM, make_model
+from src.model import Config, TinyLM, make_model
+from src.memory import DynamicMemoryManager
 
 from pathlib import Path
 
@@ -77,8 +78,8 @@ def main():
     )
     ap.add_argument("--target-core", type=int, default=1_500_000)
     ap.add_argument("--steps", type=int, default=4000)
-    ap.add_argument("--batch-size", type=int, default=32)
-    ap.add_argument("--seq-len", type=int, default=512)
+    ap.add_argument("--batch-size", type=int, default=4)
+    ap.add_argument("--seq-len", type=int, default=128)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--warmup", type=int, default=200)
     ap.add_argument("--eval-every", type=int, default=250)
@@ -93,6 +94,14 @@ def main():
     ap.add_argument("--vocab", type=int, default=32768)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--tag", default="")
+    ap.add_argument("--use-gradient-checkpointing", action="store_true",
+                    help="Enable gradient checkpointing to save GPU memory")
+    ap.add_argument("--use-cpu-offload", action="store_true",
+                    help="Enable CPU offload when GPU memory is low")
+    ap.add_argument("--memory-threshold", type=float, default=0.8,
+                    help="GPU memory threshold (0.0-1.0) to trigger CPU offload")
+    ap.add_argument("--print-memory-every", type=int, default=0,
+                    help="Print memory stats every N steps (0 to disable)")
     args = ap.parse_args()
 
     # Before anything expensive: the tokenizer that produced these bins. Its
@@ -117,7 +126,8 @@ def main():
     os.makedirs(RUNS, exist_ok=True)
 
     base = Config(seq_len=args.seq_len, ple_dim=args.ple_dim, vocab_size=args.vocab,
-                  d_model=args.d_model, n_layers=args.n_layers, n_heads=args.n_heads)
+                  d_model=args.d_model, n_layers=args.n_layers, n_heads=args.n_heads,
+                  use_gradient_checkpointing=args.use_gradient_checkpointing)
     model = make_model(args.arm, args.target_core, base, fixed_ffn=args.fixed_ffn).to(device)
     budget = model.param_budget()
     cfg = model.cfg
@@ -136,11 +146,24 @@ def main():
                       seed=args.seed)
     val_b = Batcher("val", args.batch_size, args.seq_len, device, dataset)
 
+    mem_manager = None
+    if args.use_cpu_offload or args.use_gradient_checkpointing:
+        mem_manager = DynamicMemoryManager(
+            model, opt, device,
+            memory_threshold=args.memory_threshold
+        )
+        if args.use_gradient_checkpointing:
+            mem_manager.enable_gradient_checkpointing()
+        # Don't eagerly enable CPU offload - let it trigger automatically
+
     name = f"{args.arm}{'-' + args.tag if args.tag else ''}-s{args.seed}"
     history, best = [], float("inf")
     t0 = time.time()
 
     for step in range(args.steps):
+        if mem_manager and args.print_memory_every > 0 and step % args.print_memory_every == 0:
+            mem_manager.print_memory_stats(step)
+
         lr = lr_at(step, args.steps, args.lr, args.warmup)
         for g in opt.param_groups:
             g["lr"] = lr
@@ -148,10 +171,16 @@ def main():
         _, loss = model(x, y)
         opt.zero_grad(set_to_none=True)
         loss.backward()
+
+        if mem_manager:
+            mem_manager.step()
+
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step()
 
         if step % args.eval_every == 0 or step == args.steps - 1:
+            if mem_manager and mem_manager.use_cpu_offload:
+                mem_manager.disable_cpu_offload()
             vl = evaluate(model, val_b, args.eval_iters)
             best = min(best, vl)
             tok = (step + 1) * args.batch_size * args.seq_len

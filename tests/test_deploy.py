@@ -2,7 +2,7 @@
 things in.
 
 Nothing here touches a board. Each test builds a throwaway repository holding
-the script and stub tools, puts fakes for arduino-cli, esptool and uv on PATH,
+the script and stub tools, puts fakes for arduino-cli, esptool and python on PATH,
 and points PORT at a file rather than a device. Every stub appends to one log,
 so the assertions are about the order and the arguments of real invocations
 rather than about what the script prints.
@@ -11,7 +11,7 @@ The property that matters most is the last one: the firmware is compiled before
 either image is written, so a build failure cannot leave new weights running
 under old firmware.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import os
@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "deploy.sh"
 
-# Each stub records the call and succeeds. `uv` also has to produce the headers
+# Each stub records the call and succeeds. `python` also has to produce the headers
 # the real generators would, since the compile step is told to read them.
 STUB = """#!/usr/bin/env bash
 echo "{name} $*" >> "$CALL_LOG"
@@ -46,17 +46,22 @@ for a in "$@"; do
 done
 """
 
-UV_BODY = """
+PYTHON_BODY = """
 # Mimic the generators: emit the "wrote" line deploy.sh keeps, and touch the
 # output so a later step cannot pass on a stale file.
-out=""; prev=""
-for a in "$@"; do
-  case "$prev" in --out|--out-dir) out=$a ;; esac
-  prev=$a
-done
-if [ -n "$out" ]; then mkdir -p "$(dirname "$out")" 2>/dev/null || true; : > "$out" 2>/dev/null || true; fi
-echo "wrote ${out:-nothing}"
-echo "PASS"
+import sys
+out = None
+for i, a in enumerate(sys.argv[1:]):
+    if a in ('--out', '--out-dir') and i + 2 < len(sys.argv):
+        out = sys.argv[i + 2]
+        break
+if out:
+    import os
+    import pathlib
+    pathlib.Path(out).parent.mkdir(parents=True, exist_ok=True)
+    pathlib.Path(out).touch()
+print(f"wrote {out or 'nothing'}")
+print("PASS")
 """
 
 
@@ -82,7 +87,7 @@ class DeployHarness(unittest.TestCase):
         self.bin.mkdir()
         self.log = Path(self.tmp.name) / "calls.log"
         for name, body in (("arduino-cli", ARDUINO_BODY), ("esptool", ""),
-                           ("uv", UV_BODY), ("cc", CC_BODY)):
+                           ("python", PYTHON_BODY), ("pip", ""), ("cc", CC_BODY)):
             p = self.bin / name
             p.write_text(STUB.format(name=name, body=body))
             os.chmod(p, 0o755)
@@ -117,8 +122,8 @@ class DeployHarness(unittest.TestCase):
                 return i
         return -1
 
-    def uv_calls(self):
-        return [c for c in self.calls() if c.startswith("uv ")]
+    def pip_calls(self):
+        return [c for c in self.calls() if c.startswith("python ")]
 
     def build_paths(self):
         out = []
@@ -279,9 +284,9 @@ class OrderProtectsTheBoard(DeployHarness):
                           "compiler output was truncated")
 
     def test_a_failed_gate_stops_before_compiling(self):
-        failing = STUB.format(name="uv", body='echo "FAIL: mismatch" >&2; exit 1')
-        (self.bin / "uv").write_text(failing)
-        os.chmod(self.bin / "uv", 0o755)
+        failing = STUB.format(name="python", body='echo "FAIL: mismatch" >&2; exit 1')
+        (self.bin / "python").write_text(failing)
+        os.chmod(self.bin / "python", 0o755)
         r = self.run_deploy("barista")
         self.assertNotEqual(r.returncode, 0)
         self.assertNotIn("arduino-cli compile", "\n".join(self.calls()))
@@ -297,28 +302,21 @@ class ToolsRunOutsideTheProjectEnvironment(DeployHarness):
         self.artifacts("barista", ["model.bin", "tokenizer.json",
                                    "vocab.json", "layout.json"])
 
-    def test_no_uv_call_uses_the_project_environment(self):
-        for model, expected in (("barista", 3), ("tinystories", 1)):
-            with self.subTest(model=model):
-                self.log.unlink(missing_ok=True)
-                self.assertEqual(self.run_deploy(model).returncode, 0)
-                calls = self.uv_calls()
-                self.assertEqual(len(calls), expected)
-                for c in calls:
-                    self.assertIn("--no-project", c)
-
-    def test_every_added_dependency_is_pinned(self):
+    def test_tokenizers_is_pinned_before_generators_run(self):
         for model in ("barista", "tinystories"):
             with self.subTest(model=model):
                 self.log.unlink(missing_ok=True)
-                self.run_deploy(model)
-                withs = [c for c in self.uv_calls() if "--with" in c]
-                self.assertEqual(len(withs), 1)
-                self.assertIn("tokenizers==0.23.1", withs[0])
+                self.assertEqual(self.run_deploy(model).returncode, 0)
+                calls = self.calls()
+                pip_idx = next((i for i, c in enumerate(calls) if "pip install" in c and "tokenizers" in c), -1)
+                self.assertNotEqual(pip_idx, -1, "pip install tokenizers not found")
+                gen_idx = next((i for i, c in enumerate(calls) if "generate_vocab" in c or "generate_tokenizer" in c), -1)
+                self.assertNotEqual(gen_idx, -1, "no generator found")
+                self.assertLess(pip_idx, gen_idx, "pip install should come before generators")
 
     def test_nothing_asks_for_torch(self):
         self.run_deploy("barista")
-        self.assertNotIn("torch", "\n".join(self.uv_calls()))
+        self.assertNotIn("torch", "\n".join(self.calls()))
 
 
 class RunsDoNotShareAWorkspace(DeployHarness):

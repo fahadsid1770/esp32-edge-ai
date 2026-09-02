@@ -5,14 +5,17 @@
 #
 # Fails immediately if any run fails: a partial ablation is not a result.
 set -euo pipefail
-cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+ROOT="$(cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)")"
+cd "$ROOT"
+VENV_DIR="$ROOT/venv"
+if [ -f "$VENV_DIR/bin/activate" ]; then source "$VENV_DIR/bin/activate"; fi
 
 log() { echo "[$(date '+%m-%d %H:%M')] $*"; }
 
 for seed in 0 1; do
   for arm in baseline ple ple_notable fatembed bigcore; do
     log "RUN $arm seed$seed"
-    uv run python -m research.tinystories.train \
+    python -m research.tinystories.train \
       --arm "$arm" --vocab 4096 --target-core 1500000 --steps 3000 \
       --seed "$seed" --tag clean
   done

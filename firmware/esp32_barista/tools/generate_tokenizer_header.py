@@ -36,7 +36,7 @@ Invariants this script enforces, each because the runtime depends on it:
     pre-tokenization over a plain BPE model, nothing else. Any other setting
     would tokenize differently on device than in Python.
 
-  uv run python firmware/esp32_barista/tools/generate_tokenizer_header.py
+  python firmware/esp32_barista/tools/generate_tokenizer_header.py
 """
 
 import argparse

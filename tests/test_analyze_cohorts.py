@@ -5,7 +5,7 @@ Each test asserts a specific way a cohort can be invalid. They exist because
 every one of these checks was, at some point, present in the code but not
 actually firing.
 
-  uv run python -m unittest discover -s tests
+  python -m unittest discover -s tests
 """
 
 import json

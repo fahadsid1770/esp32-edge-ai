@@ -43,7 +43,7 @@ tool takes explicit paths; none assumes a model location.
 Rebuild the decode header from a tokenizer:
 
 ```bash
-uv run python firmware/esp32_tinystories/tools/generate_vocab.py \
+python firmware/esp32_tinystories/tools/generate_vocab.py \
   --tokenizer artifacts/tinystories/tokenizer.json \
   --out firmware/esp32_tinystories/generated/vocab.h
 ```
@@ -53,7 +53,7 @@ Regenerate the model artifacts from a checkpoint:
 ```bash
 TAG=ple-cleandeploy-s0                              # a checkpoint under runs/
 TOKENIZER=data/tinystories/vocab-32768/tokenizer.json   # the one it trained on
-uv run python -m research.tinystories.export "$TAG" --tokenizer "$TOKENIZER"
+python -m research.tinystories.export "$TAG" --tokenizer "$TOKENIZER"
 ```
 
 Watch the board:
