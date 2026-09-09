@@ -1,8 +1,8 @@
-# Running a 28M parameter LLM on a ESP32-S3
+# Running a 29M parameter LLM on a ESP32-S3
 
 This is a 28.9 million parameter language model that generates text on an ESP32-S3
 microcontroller. It runs on the chip itself, with nothing sent to a server, and it
-displays generated text at 10.20 tokens per second on a small screen wired to the
+displays generated text at 10.44 tokens per second on a small screen wired to the
 chip. It fits because most of the model lives in flash instead of RAM, using
 Per-Layer Embeddings, an idea from Google's Gemma 3n.
 
@@ -12,7 +12,7 @@ Per-Layer Embeddings, an idea from Google's Gemma 3n.
 | ------------ | -------------------------------------------------- |
 | Parameters   | 28.9M stored (25M of them in a flash lookup table) |
 | Chip         | ESP32-S3, 512KB SRAM, 8MB PSRAM and 16MB flash     |
-| Speed        | 9.88 tok/s end to end, 94.9 ms/token of compute    |
+| Speed        | 10.44 tok/s end to end, 94.9 ms/token of compute    |
 | Connectivity | none, everything runs on the device                |
 | Model size   | 14.9MB at 4-bit                                    |
 
