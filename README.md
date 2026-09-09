@@ -1,15 +1,10 @@
 # Running a 28.9M parameter LLM on a microcontroller
 
-<p align="center">
-  <a href="https://x.com/slvDev">𝕏 slvDev</a> &nbsp;·&nbsp;
-  <a href="https://www.linkedin.com/in/slvdev/">LinkedIn</a>
-</p>
-
-![28.9M-parameter LLM running on an ESP32-S3](media/esp32-ple-demo.gif)
+![28.9M-parameter LLM running on an ESP32-S3]
 
 This is a 28.9 million parameter language model that generates text on an ESP32-S3
 microcontroller. It runs on the chip itself, with nothing sent to a server, and it
-displays generated text at 9.88 tokens per second on a small screen wired to the
+displays generated text at 10.20 tokens per second on a small screen wired to the
 chip. It fits because most of the model lives in flash instead of RAM, using
 Per-Layer Embeddings, an idea from Google's Gemma 3n.
 
@@ -58,40 +53,6 @@ reasoning, and the memory trick does not change it. What is interesting here is 
 architecture, fitting a large model onto a tiny chip, rather than what a 28.9 million
 parameter model can say.
 
-## Models
-
-- [Barista](https://huggingface.co/slvDev/esp32-ai-barista) - espresso question answering
-- [TinyStories](https://huggingface.co/slvDev/esp32-ai-tinystories) - story generation
-
-## Running it yourself
-
-Download and deployment are separate operations: one reaches the network, the
-other touches the board.
-
-```bash
-scripts/fetch_model.sh barista   # download, verify, install into artifacts/
-scripts/deploy.sh barista        # generate headers, run gates, compile, flash
-```
-
-`tinystories` is the other model, and takes the same two commands. Both require
-the model to be named, because the board holds one at a time and deploying
-replaces it.
-
-`fetch_model.sh` checks the inference assets against a SHA-256 and byte size
-pinned in the script, and cross-checks the release's own `metadata.json` against
-those same pins. It installs nothing unless every check passes, so a failed
-download leaves what you already have untouched. `deploy.sh` downloads no model:
-it works from whatever is already in `artifacts/<model>/`. It uses the project's
-virtual environment at `venv/` to run its header tools.
-
-The firmware details and the boot output to expect live in
-[`firmware/esp32_barista/README.md`](firmware/esp32_barista/README.md) and
-[`firmware/esp32_tinystories/README.md`](firmware/esp32_tinystories/README.md). The reusable
-architecture is in `src/`; the training, ablation and quantization code that
-reproduces the published numbers is in `research/tinystories/`. The full method,
-the ablations, and the on-chip measurements are written up in
-[`RESULTS.md`](RESULTS.md).
-
 ## Credit
 
 TinyStories is the dataset this trains on: short synthetic stories simple enough
@@ -102,7 +63,3 @@ lets a big model fit on a small chip.
 
 Andrej Karpathy's [llama2.c](https://github.com/karpathy/llama2.c) is the
 reference for training a small language model and running it in plain C.
-
-## Measurements
-
-Detailed measurements and ablations are documented in `RESULTS.md`.
