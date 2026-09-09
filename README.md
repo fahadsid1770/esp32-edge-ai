@@ -1,6 +1,4 @@
-# Running a 28.9M parameter LLM on a microcontroller
-
-![28.9M-parameter LLM running on an ESP32-S3]
+# Running a 28M parameter LLM on a ESP32-S3
 
 This is a 28.9 million parameter language model that generates text on an ESP32-S3
 microcontroller. It runs on the chip itself, with nothing sent to a server, and it
